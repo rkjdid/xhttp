@@ -9,7 +9,6 @@ import (
 )
 
 // CustomResponseWriter allows to store current status code of ResponseWriter.
-// *CustomResponseWriter might be try-casted in servers from xhttp, which is bad but true.
 type CustomResponseWriter struct {
 	http.ResponseWriter
 	Status int
