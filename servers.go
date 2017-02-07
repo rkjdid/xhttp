@@ -47,7 +47,6 @@ type HtmlServer struct {
 }
 
 func (hs *HtmlServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("dbg: %s, %s, %s", r.URL.Path, r.RequestURI, hs.Name)
 	htmlPath := path.Join(hs.Root, hs.Name)
 	t, err := template.ParseFiles(htmlPath)
 	if err != nil {
@@ -100,7 +99,7 @@ func (ls *LogServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("%s> @%s -> %s (%d)", ls.Name,
-		r.Header.Get("X-FORWARDED-FOR"), r.URL, w.(*CustomResponseWriter).Status)
+		r.Header.Get("X-FORWARDED-FOR"), r.RequestURI, w.(*CustomResponseWriter).Status)
 }
 
 // SiphonServer is useful to allow all patterns to redirect to the siphon url, /%s/
