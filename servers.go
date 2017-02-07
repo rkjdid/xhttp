@@ -99,8 +99,8 @@ func (ls *LogServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	}
 
-	log.Printf("%s-%s> @%s: %s (%d) - agent:%s",
-		r.Host, ls.Name, r.Header.Get("X-FORWARDED-FOR"), r.RequestURI, w.(*CustomResponseWriter).Status, r.Header.Get("USER-AGENT"))
+	log.Printf("%s-%s> (%d) @%s: %s - agent:%s",
+		r.Host, ls.Name, w.(*CustomResponseWriter).Status, r.Header.Get("X-FORWARDED-FOR"), r.RequestURI, r.Header.Get("USER-AGENT"))
 }
 
 // SiphonServer is useful to allow all patterns to redirect to the siphon url, /%s/
