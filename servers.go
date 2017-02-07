@@ -47,8 +47,7 @@ type HtmlServer struct {
 }
 
 func (hs *HtmlServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	htmlPath := path.Join(hs.Root, hs.Name)
-	t, err := template.ParseFiles(htmlPath)
+	t, err := template.ParseFiles(path.Join(hs.Root, hs.Name))
 	if err != nil {
 		log.Printf("%s -> err parsing %s: %s", r.URL.Path, hs.Name, err)
 		if hs.Debug {
