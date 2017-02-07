@@ -1,11 +1,11 @@
 package xhttp
 
 import (
-	"net/http"
-	"path"
+	"fmt"
 	"html/template"
 	"log"
-	"fmt"
+	"net/http"
+	"path"
 )
 
 // CustomResponseWriter allows to store current status code of ResponseWriter.
@@ -32,7 +32,7 @@ func WrapCustomRW(wr http.ResponseWriter) http.ResponseWriter {
 	if _, ok := wr.(*CustomResponseWriter); !ok {
 		return &CustomResponseWriter{
 			ResponseWriter: wr,
-			Status: http.StatusOK, // defaults to ok, some servers might not call wr.WriteHeader at all
+			Status:         http.StatusOK, // defaults to ok, some servers might not call wr.WriteHeader at all
 		}
 	}
 	return wr
@@ -47,6 +47,7 @@ type HtmlServer struct {
 }
 
 func (hs *HtmlServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("dbg: %s, %s, %s", r.URL.Path, r.RequestURI, hs.Name)
 	htmlPath := path.Join(hs.Root, hs.Name)
 	t, err := template.ParseFiles(htmlPath)
 	if err != nil {
@@ -74,6 +75,7 @@ func (hs *HtmlServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // WatServer is basically a 404 fallback server
 type WatServer struct{}
+
 func (ws *WatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprintf(w, "<html><head><title>what?</title></head><body>looking for <em>%s</em> ?</body>", r.URL.Path)
@@ -82,8 +84,8 @@ func (ws *WatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // LogServer is a simple log wrapper to either a http.Handler, or if Handler is nil,
 // to HandleFunc. It provides simple logging before responding with one of the inner handlers
 type LogServer struct {
+	http.Handler
 	Name       string
-	Handler    http.Handler
 	HandleFunc func(http.ResponseWriter, *http.Request)
 }
 
@@ -91,17 +93,27 @@ type LogServer struct {
 // ls.HandleFunc, or returns default http.NotFound.
 func (ls *LogServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w = WrapCustomRW(w)
-	var prefix string
-	if ls.Name != "" {
-		prefix = ls.Name + "> "
-	}
 	if ls.Handler != nil {
 		ls.Handler.ServeHTTP(w, r)
 	} else {
 		http.NotFound(w, r)
 	}
 
-	log.Printf("%s> serving %s -> %s (%d)",
-		prefix, r.Header.Get("X-FORWARDED-FOR"), r.URL, w.(*CustomResponseWriter).Status)
+	log.Printf("%s> @%s -> %s (%d)", ls.Name,
+		r.Header.Get("X-FORWARDED-FOR"), r.URL, w.(*CustomResponseWriter).Status)
 }
 
+// SiphonServer is useful to allow all patterns to redirect to the siphon url, /%s/
+type SiphonServer struct {
+	http.Handler
+	Target string
+}
+
+func (ss *SiphonServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.RequestURI != ss.Target {
+		http.Redirect(w, r, ss.Target, http.StatusFound)
+		return
+	}
+	ss.Handler.ServeHTTP(w, r)
+	return
+}
