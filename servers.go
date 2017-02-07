@@ -93,6 +93,8 @@ func (ls *LogServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w = WrapCustomRW(w)
 	if ls.Handler != nil {
 		ls.Handler.ServeHTTP(w, r)
+	} else if ls.HandleFunc != nil {
+		ls.HandleFunc(w, r)
 	} else {
 		http.NotFound(w, r)
 	}
